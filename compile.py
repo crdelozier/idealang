@@ -1,10 +1,11 @@
 import os
 import subprocess
 import argparse
+import re
 
 def run_llava(input_image):
     try:
-        command = ["ollama","run","llava","This image represents ideas for a computer program: " + input_image + ". Give a description of the computer program that could be used by another generative AI tool to write the program."]
+        command = ["ollama","run","llava","This image represents ideas for a computer program: " + input_image + ". Give a description of the computer program that could be used by another generative AI tool to write the program.  Be as specific as possible about specific functions that will need to be written as computer code and number each function in a list."]
         process = subprocess.run(
             command,
             text=True,
@@ -57,9 +58,22 @@ def analyze_images(image_dir, output_dir, language):
 
         analysis_results.append(analysis_result)
 
+    functions_to_gen = []
+    
+    for analysis_result in analysis_results:
+        # Regular expression to match the pattern
+        pattern = r"^\d+\.\s*(.*)$"
+
+        # Extracting the text after the number for each line
+        lines = analysis_result.split("\n")
+        extracted_texts = [re.search(pattern, line).group(1) for line in lines if re.search(pattern, line)]
+        functions_to_gen.append(extracted_texts)
+
+    print(functions_to_gen)
+        
     for analysis_result in analysis_results:
         # Call ollama to generate code
-        print(f"Generating code for {image_file}...")
+        print(f"Generating code for {analysis_result}...")
         code_result = run_codellama(language, analysis_result)
         if code_result is None:
             print(f"Skipping {image_file} due to code generation error.")
